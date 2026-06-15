@@ -67,6 +67,50 @@ def test_list_type():
     assert args.parser(main).parse_args(["--layers", "64", "32"]).layers == [64, 32]
 
 
+def test_literal_str_becomes_choices():
+    from typing import Literal
+
+    def main(mode: Literal["train", "eval"]): ...
+
+    p = args.parser(main)
+    assert p.parse_args(["--mode", "train"]).mode == "train"
+    with pytest.raises(SystemExit):
+        p.parse_args(["--mode", "predict"])
+
+
+def test_literal_int_coerces_and_constrains():
+    from typing import Literal
+
+    def main(level: Literal[1, 2, 3]): ...
+
+    p = args.parser(main)
+    assert p.parse_args(["--level", "2"]).level == 2
+    with pytest.raises(SystemExit):
+        p.parse_args(["--level", "4"])
+
+
+def test_optional_literal_defaults_to_none():
+    from typing import Literal
+
+    def main(mode: Literal["train", "eval"] | None = None): ...
+
+    p = args.parser(main)
+    assert p.parse_args([]).mode is None
+    assert p.parse_args(["--mode", "eval"]).mode == "eval"
+
+
+def test_literal_with_default():
+    from typing import Literal
+
+    def main(mode: Literal["train", "eval"] = "train"): ...
+
+    p = args.parser(main)
+    assert p.parse_args([]).mode == "train"
+    assert p.parse_args(["--mode", "eval"]).mode == "eval"
+    with pytest.raises(SystemExit):
+        p.parse_args(["--mode", "predict"])
+
+
 class Color:
     def __init__(self, raw: str):
         self.raw = raw

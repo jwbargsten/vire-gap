@@ -11,7 +11,7 @@ import dataclasses
 import inspect
 import json
 import types
-from typing import Any, Callable, Union, get_args, get_origin, get_type_hints
+from typing import Any, Callable, Literal, Union, get_args, get_origin, get_type_hints
 
 __all__ = ["arg", "parser", "run", "to_argv"]
 
@@ -91,6 +91,10 @@ def _param_to_add_argument(
 
     if inner is bool:
         kwargs["action"] = _BooleanOptionalAction
+    elif get_origin(inner) is Literal:
+        choices = get_args(inner)
+        kwargs["choices"] = list(choices)
+        kwargs["type"] = _converter_for(type(choices[0]), type_init)
     elif get_origin(inner) is list:
         item_args = get_args(inner)
         kwargs["nargs"] = "*"
