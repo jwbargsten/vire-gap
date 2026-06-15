@@ -84,6 +84,7 @@ argh which rewrites underscores to hyphens.
 - No `assert` for production logic (stripped under `-O`). Fine in tests.
 - Validate data at system boundaries (ingestion, external API results), not throughout.
 - Docstrings (Google style) on public API functions. Internal helpers only if non-obvious.
+- Put (http)-clients into separate classes so I can supply base_path, etc. at construction time
 
 ## Types
 
