@@ -1,12 +1,12 @@
 [project]
-name = "vire"
+name = "vire-gap"
 version = "0.1.0"
-description = "Type-driven argparse generator for Vertex AI entrypoints"
+description = "Utilities for the Gemini Enterprise Agent Platform (type-driven argparse and more)"
 readme = "README.md"
 authors = [
     { name = "Joachim Bargsten", email = "jw@bargsten.org" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = []
 
 [build-system]

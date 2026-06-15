@@ -1,8 +1,9 @@
 """Derive an argparse parser from a function's type hints.
 
-Tuned for Vertex AI: every parameter becomes a ``--flag`` with underscores
-preserved (``--learning_rate``), and custom parameter types are built from
-their string value via argparse's normal ``type=`` mechanism.
+Tuned for the Gemini Enterprise Agent Platform: every parameter becomes a
+``--flag`` with underscores preserved (``--learning_rate``), and custom
+parameter types are built from their string value via argparse's normal
+``type=`` mechanism.
 """
 
 import argparse
@@ -12,7 +13,7 @@ import json
 import types
 from typing import Any, Callable, Union, get_args, get_origin, get_type_hints
 
-__all__ = ["vire", "parser", "run", "to_argv"]
+__all__ = ["arg", "parser", "run", "to_argv"]
 
 
 class _BooleanOptionalAction(argparse.Action):
@@ -34,7 +35,7 @@ class _BooleanOptionalAction(argparse.Action):
         return " | ".join(self.option_strings)
 
 
-def vire(*, type_init: dict[type, Callable[[str], Any]] | None = None):
+def arg(*, type_init: dict[type, Callable[[str], Any]] | None = None):
     """Attach per-type string converters to a function.
 
     ``type_init`` maps a parameter type to a ``Callable[[str], T]`` that is
@@ -43,12 +44,12 @@ def vire(*, type_init: dict[type, Callable[[str], Any]] | None = None):
 
     Example::
 
-        @vire(type_init={Path: Path})
+        @arg(type_init={Path: Path})
         def main(out_dir: Path): ...
     """
 
     def decorate(func):
-        func.__vire_type_init__ = type_init or {}
+        func.__vire_gap_type_init__ = type_init or {}
         return func
 
     return decorate
@@ -63,7 +64,7 @@ def _unwrap_optional(hint) -> tuple[Any, bool]:
         if len(args) == 1:
             return args[0], is_optional
         raise TypeError(
-            f"unsupported union of multiple types: {hint}; vire only supports Optional[T] / T | None"
+            f"unsupported union of multiple types: {hint}; only Optional[T] / T | None is supported"
         )
     return hint, False
 
@@ -82,7 +83,7 @@ def _param_to_add_argument(
 ) -> tuple[list[str], dict[str, Any]]:
     """Map one parameter to ``(["--name"], add_argument_kwargs)``."""
     if hint is inspect.Parameter.empty:
-        raise TypeError(f"parameter '{param.name}' has no type annotation; vire is type-driven")
+        raise TypeError(f"parameter '{param.name}' has no type annotation; argument derivation is type-driven")
 
     has_default = param.default is not inspect.Parameter.empty
     inner, is_optional = _unwrap_optional(hint)
@@ -110,7 +111,7 @@ def _param_to_add_argument(
 
 def parser(func: Callable) -> argparse.ArgumentParser:
     """Build an :class:`argparse.ArgumentParser` from ``func``'s signature."""
-    type_init = getattr(func, "__vire_type_init__", {})
+    type_init = getattr(func, "__vire_gap_type_init__", {})
     signature = inspect.signature(func)
     hints = get_type_hints(func)
 
@@ -130,7 +131,7 @@ def run(func: Callable, argv: list[str] | None = None) -> Any:
 
 
 def to_argv(instance: Any, exclude: set[str] | None = None) -> list[str]:
-    """Render a dataclass instance or mapping as a vire-style argv list.
+    """Render a dataclass instance or mapping as an argv list.
 
     Bools use the ``--name`` (True) / ``--no_name`` (False) convention, matching
     the parser; ``dict``/``list`` values are JSON-encoded. ``exclude`` skips

@@ -4,29 +4,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-`vire` is a Python library that derives an `argparse.ArgumentParser` from a function's
-type hints — like `argh`/`fire` (vendored under `ext/` for reference), but tuned for
-Vertex AI: every parameter maps to a `--flag` with underscores preserved
-(`--learning_rate`), and custom parameter types are built from their string value via
-argparse's `type=` mechanism. Early stage. Treat `tests/test_vire.py` as the spec.
+`vire-gap` (distribution name; imports as `vire_gap`) is a Python library of utilities for
+the Gemini Enterprise Agent Platform (formerly Vertex AI). Its first module,
+`vire_gap.args`, derives an `argparse.ArgumentParser` from a function's type hints — like
+`argh`/`fire` (vendored under `ext/` for reference), but tuned for the platform: every
+parameter maps to a `--flag` with underscores preserved (`--learning_rate`), and custom
+parameter types are built from their string value via argparse's `type=` mechanism.
+Early stage. Treat `tests/test_args.py` as the spec.
 
 Python >=3.12, `src/`-based layout (`pythonpath = ["src", "tests"]`), managed with `uv`.
 
 ## Commands
 
 - `make test` — run the test suite (`uv run pytest tests/`)
-- `uv run pytest tests/test_vire.py::test_bool_optional_action` — run a single test
+- `uv run pytest tests/test_args.py::test_bool_optional_action` — run a single test
 - `make lint` — `uv run ruff check` + `ruff format --check` on `src/ tests/`
 - `make fmt` — `uv run ruff format` + `ruff check --fix` on `src/ tests/`
 
 ## Architecture
 
-- `src/vire/core.py` — the whole implementation. `parser(func)` walks `inspect.signature`
+- `src/vire_gap/args.py` — the argparse module. `parser(func)` walks `inspect.signature`
   + `get_type_hints` and calls `add_argument` per parameter; `run(func, argv)` parses and
-  dispatches; `vire(type_init=...)` is a decorator stashing per-type string converters on
-  the function. `_BooleanOptionalAction` replaces `argparse.BooleanOptionalAction` so the
+  dispatches; `arg(type_init=...)` is a decorator stashing per-type string converters on
+  the function (`__vire_gap_type_init__`); `to_argv(instance)` is the inverse (dataclass/mapping
+  → argv). `_BooleanOptionalAction` replaces `argparse.BooleanOptionalAction` so the
   negated form is `--no_flag` (underscore) instead of `--no-flag`.
-- `src/vire/__init__.py` — re-exports `vire`, `parser`, `run`.
+- `src/vire_gap/__init__.py` — exposes submodules (`vire_gap.args`); other platform utilities
+  go in sibling modules.
 
 Key invariant: CLI flags preserve the parameter name verbatim (`--learning_rate`), unlike
 argh which rewrites underscores to hyphens.
